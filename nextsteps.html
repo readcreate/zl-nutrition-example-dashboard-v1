@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIH Nutrition — Prochaines Étapes</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-container"></div>
+
+<div class="page active" id="page-nextsteps">
+
+  <div class="section-header">
+    <div class="section-title-fr">De la démo à la production</div>
+    <div class="section-title-en">From demo to production</div>
+    <p class="section-desc">
+      Ce tableau de bord est une démo fonctionnelle avec données fictives. Voici ce qui est nécessaire pour le déployer en production avec de vraies données PIH Haïti.
+      <br><span style="color:var(--gray-400);font-size:12px;">This is a working demo with synthetic data. Below is everything needed to deploy it in production with real PIH Haiti data.</span>
+    </p>
+  </div>
+
+  <!-- PHASE 1: DATA -->
+  <div style="margin-bottom:10px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--pih-red);margin-bottom:10px;">Phase 1 — Données / Data (Priorité haute / High priority)</div>
+
+    <div class="step-card priority-high">
+      <div class="step-phase">Étape 1 · Step 1</div>
+      <div class="step-title-fr">Accès à l'API CommCare</div>
+      <div class="step-title-en">CommCare API access</div>
+      <p class="step-desc">
+        Toutes les données sont déjà dans CommCare. Un administrateur CommCare doit activer l'API REST et fournir des identifiants (clé API ou OAuth2). Cela permet d'interroger les formulaires USN, PTA, PNS et les données patient en temps réel, sans export manuel Excel.
+        <br><span style="color:var(--gray-400);font-size:12px;">All data already lives in CommCare. A CommCare admin needs to enable the REST API and provide credentials (API key or OAuth2). This allows querying USN/PTA/PNS forms and patient data in real time, eliminating manual Excel exports.</span>
+        <br><br>
+        <strong>Contact:</strong> Administrateur CommCare PIH Haïti · <a href="https://confluence.dimagi.com/display/commcarepublic/CommCare+API+Overview" target="_blank" style="color:var(--blue);">Documentation API CommCare →</a>
+      </p>
+    </div>
+
+    <div class="step-card priority-high">
+      <div class="step-phase">Étape 2 · Step 2</div>
+      <div class="step-title-fr">Base de données de production</div>
+      <div class="step-title-en">Production database</div>
+      <p class="step-desc">
+        Mettre en place une base de données PostgreSQL simple qui reçoit les données de CommCare via webhook (mise à jour en temps réel à chaque soumission de formulaire) ou via synchronisation quotidienne. PostgreSQL est gratuit, fiable et facile à maintenir.
+        <br><span style="color:var(--gray-400);font-size:12px;">Set up a simple PostgreSQL database that receives CommCare data via webhook (real-time on every form submission) or daily sync. PostgreSQL is free, reliable, and low-maintenance.</span>
+        <br><br>
+        <strong>Options d'hébergement:</strong> Render.com (gratuit pour petites charges), Railway, Supabase (PostgreSQL gratuit inclus).
+      </p>
+    </div>
+
+    <div class="step-card priority-high">
+      <div class="step-phase">Étape 3 · Step 3</div>
+      <div class="step-title-fr">Assignation ASC ↔ Patients</div>
+      <div class="step-title-en">CHW ↔ Patient assignment data</div>
+      <p class="step-desc">
+        La relation entre un ASC et ses patients n'existe pas encore dans les données CommCare. Il faut ajouter un champ "ASC assigné" dans les formulaires CommCare, ou créer une table de correspondance séparée. Sans cette donnée, la vue ASC du tableau de bord ne peut pas être personnalisée par individu.
+        <br><span style="color:var(--gray-400);font-size:12px;">The CHW-to-patient relationship does not yet exist in the CommCare data. A field "assigned CHW" must be added to CommCare forms, or a separate mapping table created. Without this, the CHW view cannot be personalized per individual.</span>
+        <br><br>
+        <strong>Action requise:</strong> Équipe CommCare + responsables terrain / CommCare team + field supervisors.
+      </p>
+    </div>
+
+    <div class="step-card priority-high">
+      <div class="step-phase">Étape 4 · Step 4</div>
+      <div class="step-title-fr">Import historique des données Excel</div>
+      <div class="step-title-en">Historical Excel data import</div>
+      <p class="step-desc">
+        Les données historiques existent sous forme de fichiers Excel (comme celui fourni pour cette démo). Un script de migration unique peut importer ces données dans la base de données de production pour permettre l'analyse des cohortes passées.
+        <br><span style="color:var(--gray-400);font-size:12px;">Historical data exists as Excel files (like the one provided for this demo). A one-time migration script can import this data into the production database to enable retrospective cohort analysis.</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- PHASE 2: TECH -->
+  <div style="margin-bottom:10px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--yellow);margin-bottom:10px;">Phase 2 — Infrastructure technique / Technical infrastructure (Priorité moyenne / Medium priority)</div>
+
+    <div class="step-card priority-med">
+      <div class="step-phase">Étape 5 · Step 5</div>
+      <div class="step-title-fr">Authentification et contrôle d'accès par rôle</div>
+      <div class="step-title-en">Authentication and role-based access control</div>
+      <p class="step-desc">
+        En production, chaque utilisateur doit se connecter avec ses propres identifiants. Un superviseur voit tous les sites. Un médecin voit son site. Un ASC voit uniquement ses patients. Options recommandées: Auth0 (simple, gratuit jusqu'à 7000 utilisateurs) ou integration avec le système d'identité existant PIH.
+        <br><span style="color:var(--gray-400);font-size:12px;">In production, each user must log in with their own credentials. A supervisor sees all sites. A doctor sees their site. A CHW sees only their patients. Recommended: Auth0 (simple, free up to 7000 users) or integration with PIH's existing identity system.</span>
+      </p>
+    </div>
+
+    <div class="step-card priority-med">
+      <div class="step-phase">Étape 6 · Step 6</div>
+      <div class="step-title-fr">Hébergement sécurisé</div>
+      <div class="step-title-en">Secure hosting</div>
+      <p class="step-desc">
+        Ce tableau de bord contient des données de patients — il doit être hébergé sur un serveur sécurisé, derrière authentification, avec HTTPS. Options adaptées à PIH: Render.com, Railway, ou un serveur PIH existant. GitHub Pages (utilisé pour la démo) n'est pas adapté pour des données patients réelles.
+        <br><span style="color:var(--gray-400);font-size:12px;">This dashboard will contain patient data — it must be hosted on a secure server, behind authentication, with HTTPS. Suitable options for PIH: Render.com, Railway, or an existing PIH server. GitHub Pages (used for this demo) is not suitable for real patient data.</span>
+      </p>
+    </div>
+
+    <div class="step-card priority-med">
+      <div class="step-phase">Étape 7 · Step 7</div>
+      <div class="step-title-fr">Livraison des alertes — WhatsApp + Email</div>
+      <div class="step-title-en">Alert delivery — WhatsApp + Email</div>
+      <p class="step-desc">
+        Le système d'alertes de la démo est simulé. En production: <strong>WhatsApp Business API</strong> via Twilio ou 360dialog pour les ASC et les alertes urgentes. <strong>Email</strong> via SendGrid ou Mailgun pour les rapports hebdomadaires et les escalades. Les deux sont peu coûteux à l'échelle de ce programme.
+        <br><span style="color:var(--gray-400);font-size:12px;">The demo alert system is simulated. In production: WhatsApp Business API via Twilio or 360dialog for CHWs and urgent alerts. Email via SendGrid or Mailgun for weekly reports and escalations. Both are low-cost at this program's scale.</span>
+        <br><br>
+        <strong>Alternative à considérer:</strong> Application mobile dédiée ASC (voir ci-dessous).
+      </p>
+    </div>
+  </div>
+
+  <!-- PHASE 3: ENHANCEMENTS -->
+  <div style="margin-bottom:10px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:10px;">Phase 3 — Améliorations futures / Future enhancements (Priorité basse / Lower priority)</div>
+
+    <div class="step-card priority-low">
+      <div class="step-phase">Étape 8 · Step 8</div>
+      <div class="step-title-fr">Application mobile dédiée pour les ASC (PWA)</div>
+      <div class="step-title-en">Dedicated CHW mobile app (Progressive Web App)</div>
+      <p class="step-desc">
+        WhatsApp est le bon point de départ pour les alertes ASC. Mais à terme, une Progressive Web App (PWA) — une application web qui fonctionne hors ligne et peut être enregistrée sur l'écran d'accueil sans passer par un store — permettrait aux ASC de: voir leur liste de patients hors ligne, enregistrer des visites directement depuis le terrain, recevoir des alertes séparées de leurs messages personnels, et éventuellement remplacer CommCare pour la saisie ASC.
+        <br><span style="color:var(--gray-400);font-size:12px;">WhatsApp is the right starting point. But a Progressive Web App — a web app that works offline and can be saved to the home screen without an app store — would allow CHWs to: view their patient list offline, log visits directly from the field, receive alerts separate from personal messages, and potentially replace CommCare for CHW data entry.</span>
+      </p>
+    </div>
+
+    <div class="step-card priority-low">
+      <div class="step-phase">Étape 9 · Step 9</div>
+      <div class="step-title-fr">Validation clinique des seuils d'alerte</div>
+      <div class="step-title-en">Clinical validation of alert thresholds</div>
+      <p class="step-desc">
+        Les seuils utilisés dans la démo (MUAC &lt;115mm, gain de poids &lt;5g/kg/jour, délai de visite 7/14 jours) sont basés sur les protocoles WHO/Sphere standard pour SAM et MAM. Ces seuils doivent être revus et validés par l'équipe clinique PIH Haïti, qui peut avoir des protocoles locaux adaptés au contexte.
+        <br><span style="color:var(--gray-400);font-size:12px;">Thresholds used in this demo are based on standard WHO/Sphere protocols for SAM and MAM. These must be reviewed and validated by the PIH Haiti clinical team, who may have locally adapted protocols.</span>
+      </p>
+    </div>
+
+    <div class="step-card priority-low">
+      <div class="step-phase">Étape 10 · Step 10</div>
+      <div class="step-title-fr">Relation avec Power BI existant</div>
+      <div class="step-title-en">Relationship with existing Power BI</div>
+      <p class="step-desc">
+        PIH utilise déjà Power BI pour certains rapports nutritionnels. Ce tableau de bord n'est pas conçu pour remplacer Power BI, mais pour compléter ses capacités là où Power BI est limité: alertes en temps réel, vue par rôle, score de risque patient, vue du parcours complet. Il est possible de connecter les deux à la même base de données PostgreSQL.
+        <br><span style="color:var(--gray-400);font-size:12px;">PIH already uses Power BI for some nutrition reports. This dashboard is not designed to replace Power BI, but to complement it where Power BI falls short: real-time alerts, role-based views, patient risk scores, full journey view. Both can connect to the same PostgreSQL database.</span>
+      </p>
+    </div>
+
+    <div class="step-card priority-low">
+      <div class="step-phase">Étape 11 · Step 11</div>
+      <div class="step-title-fr">Conformité données patients et confidentialité</div>
+      <div class="step-title-en">Patient data compliance and privacy</div>
+      <p class="step-desc">
+        Avant déploiement avec de vraies données, s'assurer de la conformité avec les politiques de confidentialité de PIH, les réglementations haïtiennes applicables, et les exigences des bailleurs de fonds. Cela inclut: chiffrement des données au repos et en transit, politique de rétention des données, et accès limité par rôle.
+        <br><span style="color:var(--gray-400);font-size:12px;">Before deploying with real data, ensure compliance with PIH privacy policies, applicable Haitian regulations, and donor requirements. This includes: data encryption at rest and in transit, data retention policy, and role-based access restrictions.</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- SUMMARY TABLE -->
+  <div class="card" style="margin-bottom:40px;">
+    <div class="card-title">Résumé — Feuille de route / Summary roadmap</div>
+    <div style="overflow-x:auto;">
+      <table class="vs-table" style="font-size:13px;">
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Étape / Step</th>
+            <th>Responsable / Owner</th>
+            <th>Effort estimé</th>
+            <th>Priorité</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Accès API CommCare</td><td>Admin CommCare PIH</td><td>Faible / Low</td><td style="color:var(--pih-red);font-weight:700;">Haute</td></tr>
+          <tr><td>1</td><td>Base de données PostgreSQL</td><td>Développeur</td><td>Moyen / Med</td><td style="color:var(--pih-red);font-weight:700;">Haute</td></tr>
+          <tr><td>1</td><td>Assignation ASC ↔ patients</td><td>Équipe terrain + CommCare</td><td>Faible / Low</td><td style="color:var(--pih-red);font-weight:700;">Haute</td></tr>
+          <tr><td>1</td><td>Import historique Excel</td><td>Développeur</td><td>Faible / Low</td><td style="color:var(--pih-red);font-weight:700;">Haute</td></tr>
+          <tr><td>2</td><td>Authentification / RBAC</td><td>Développeur</td><td>Moyen / Med</td><td style="color:var(--yellow);font-weight:700;">Moyenne</td></tr>
+          <tr><td>2</td><td>Hébergement sécurisé</td><td>IT PIH + Développeur</td><td>Faible / Low</td><td style="color:var(--yellow);font-weight:700;">Moyenne</td></tr>
+          <tr><td>2</td><td>Alertes WhatsApp + Email</td><td>Développeur</td><td>Moyen / Med</td><td style="color:var(--yellow);font-weight:700;">Moyenne</td></tr>
+          <tr><td>3</td><td>Application PWA pour ASC</td><td>Développeur</td><td>Élevé / High</td><td style="color:var(--blue);font-weight:700;">Basse</td></tr>
+          <tr><td>3</td><td>Validation seuils cliniques</td><td>Équipe clinique PIH</td><td>Faible / Low</td><td style="color:var(--blue);font-weight:700;">Basse</td></tr>
+          <tr><td>3</td><td>Relation Power BI</td><td>Équipe données PIH</td><td>Faible / Low</td><td style="color:var(--blue);font-weight:700;">Basse</td></tr>
+          <tr><td>3</td><td>Conformité / Privacy</td><td>Direction PIH + IT</td><td>Moyen / Med</td><td style="color:var(--blue);font-weight:700;">Basse</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:10px 0 60px;color:var(--gray-400);font-size:12px;">
+    Tableau de bord PIH Nutrition — Démo · Données fictives · <a href="index.html" style="color:var(--blue);">Retour à l'introduction / Back to introduction</a>
+  </div>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/shared.js"></script>
+<script>
+  document.getElementById('nav-container').innerHTML = buildNav('nextsteps');
+</script>
+</body>
+</html>

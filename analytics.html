@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIH Nutrition — Analytique M&E</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-container"></div>
+
+<div class="page active" id="page-analytics">
+
+  <div class="view-info">
+    <div class="view-info-icon">ℹ️</div>
+    <div>
+      <div class="view-info-fr">Vue Analytique M&E — Analyse des cohortes, taux de guérison, durée de séjour, comparaisons entre sites et tendances d'admission</div>
+      <div class="view-info-en">M&E Analytics view — Cohort analysis, recovery rates, length of stay, site comparisons, and admission trends. For data and monitoring teams.</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title-fr">Analytique — Suivi & Évaluation</div>
+    <div class="section-title-en">Analytics — Monitoring & Evaluation</div>
+  </div>
+
+  <!-- TOP STATS -->
+  <div class="stat-grid" style="margin-bottom:24px;" id="analytics-stats"></div>
+
+  <!-- COHORT + ADMISSIONS -->
+  <div class="two-col" style="margin-bottom:20px;">
+
+    <div class="card">
+      <div class="card-title">Analyse par cohorte d'admission / Cohort analysis by admission month</div>
+      <div style="font-size:11px;color:var(--gray-400);margin-bottom:14px;">Résultats des patients par mois d'admission / Patient outcomes by admission month</div>
+      <div id="cohort-chart"></div>
+      <div class="legend" style="margin-top:14px;">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Guéri / Recovered</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Abandon / Defaulted</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Transféré / Transferred</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--pih-red)"></div>Décédé / Deceased</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gray-300)"></div>Actif / Active</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Admissions mensuelles par programme / Monthly admissions by program</div>
+      <div style="font-size:11px;color:var(--gray-400);margin-bottom:14px;">Juil 2025 — Jan 2026</div>
+      <div id="admissions-chart"></div>
+      <div class="legend" style="margin-top:14px;">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--pih-red)"></div>USN</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>PTA</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>PNS</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="two-col" style="margin-bottom:20px;">
+
+    <!-- OUTCOMES BY PROGRAM -->
+    <div class="card">
+      <div class="card-title">Résultats par programme / Outcomes by program</div>
+      <div id="outcomes-table"></div>
+    </div>
+
+    <!-- SITE COMPARISON -->
+    <div class="card">
+      <div class="card-title">Comparaison des sites / Site comparison</div>
+      <div id="site-comparison"></div>
+    </div>
+
+  </div>
+
+  <!-- LENGTH OF STAY + DISCHARGED TABLE -->
+  <div class="two-col" style="margin-bottom:20px;">
+
+    <div class="card">
+      <div class="card-title">Durée de séjour / Length of stay</div>
+      <div id="los-chart"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Patients récemment sortis / Recently discharged patients</div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="discharged-table">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Prog.</th>
+              <th>Site</th>
+              <th>Durée</th>
+              <th>Résultat</th>
+              <th>Gain poids</th>
+            </tr>
+          </thead>
+          <tbody id="discharged-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RISK DISTRIBUTION -->
+  <div class="card" style="margin-bottom:80px;">
+    <div class="card-title">Distribution du risque — patients actifs / Risk distribution — active patients</div>
+    <div id="risk-distribution"></div>
+  </div>
+
+</div>
+
+<div id="sim-bar-container"></div>
+
+<script src="js/data.js"></script>
+<script src="js/shared.js"></script>
+<script>
+document.getElementById('nav-container').innerHTML = buildNav('analytics');
+document.getElementById('sim-bar-container').innerHTML = buildSimBar();
+
+function render() {
+  const patients = getPatients();
+  const discharged = DISCHARGED_PATIENTS;
+  const all = [...patients.map(p => ({...p, outcome: 'Actif'})), ...discharged];
+
+  // ── TOP STATS ──
+  const totalAdmitted = all.length;
+  const recovered = discharged.filter(p => p.outcome === 'Guéri').length;
+  const recoveryRate = Math.round(recovered / discharged.length * 100);
+  const avgLOS = Math.round(discharged.reduce((s, p) => s + p.stay_days, 0) / discharged.length);
+  const defaulted = discharged.filter(p => p.outcome === 'Abandon').length;
+  const deceased = discharged.filter(p => p.outcome === 'Décédé').length;
+
+  document.getElementById('analytics-stats').innerHTML = `
+    <div class="stat-card green">
+      <div class="stat-label-fr">Taux de guérison</div>
+      <div class="stat-label-en">Recovery rate</div>
+      <div class="stat-value" style="color:var(--green)">${recoveryRate}%</div>
+      <div class="stat-sub">${recovered} / ${discharged.length} sortis / discharged</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label-fr">Total admis</div>
+      <div class="stat-label-en">Total admitted</div>
+      <div class="stat-value" style="color:var(--blue)">${totalAdmitted}</div>
+      <div class="stat-sub">${patients.length} actifs · ${discharged.length} sortis</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label-fr">Taux d'abandon</div>
+      <div class="stat-label-en">Default rate</div>
+      <div class="stat-value" style="color:var(--yellow)">${Math.round(defaulted / discharged.length * 100)}%</div>
+      <div class="stat-sub">${defaulted} patients</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label-fr">Létalité</div>
+      <div class="stat-label-en">Case fatality rate</div>
+      <div class="stat-value" style="color:var(--pih-red)">${Math.round(deceased / discharged.length * 100)}%</div>
+      <div class="stat-sub">${deceased} décès / deaths</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label-fr">Durée de séjour moy.</div>
+      <div class="stat-label-en">Avg. length of stay</div>
+      <div class="stat-value" style="color:var(--blue)">${avgLOS}</div>
+      <div class="stat-sub">jours / days</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label-fr">Sites actifs</div>
+      <div class="stat-label-en">Active sites</div>
+      <div class="stat-value" style="color:var(--green)">${getSiteStats().length}</div>
+      <div class="stat-sub">Département Centre + Nord</div>
+    </div>
+  `;
+
+  // ── COHORT CHART ──
+  const cohortEl = document.getElementById('cohort-chart');
+  cohortEl.innerHTML = COHORT_DATA.map(c => {
+    const total = c.admitted;
+    const pct = v => Math.round(v / total * 100);
+    return `
+      <div class="cohort-bar-row">
+        <div class="cohort-label">${c.month}</div>
+        <div class="cohort-bars" style="border-radius:4px;overflow:hidden;">
+          <div class="cohort-segment recovered" style="width:${pct(c.recovered)}%" data-tooltip="${c.recovered} guéris"></div>
+          <div class="cohort-segment defaulted" style="width:${pct(c.defaulted)}%" data-tooltip="${c.defaulted} abandons"></div>
+          <div class="cohort-segment transferred" style="width:${pct(c.transferred)}%" data-tooltip="${c.transferred} transférés"></div>
+          <div class="cohort-segment deceased" style="width:${pct(c.deceased)}%" data-tooltip="${c.deceased} décès"></div>
+          <div class="cohort-segment active" style="width:${pct(c.active)}%" data-tooltip="${c.active} actifs"></div>
+        </div>
+        <div style="font-size:11px;color:var(--gray-500);white-space:nowrap;">${total} admis</div>
+      </div>`;
+  }).join('');
+
+  // ── ADMISSIONS CHART ──
+  const maxAdm = Math.max(...MONTHLY_ADMISSIONS.map(m => m.usn + m.pta + m.pns));
+  document.getElementById('admissions-chart').innerHTML = MONTHLY_ADMISSIONS.map(m => {
+    const total = m.usn + m.pta + m.pns;
+    return `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
+        <div style="width:32px;font-size:11px;color:var(--gray-500);text-align:right;">${m.month}</div>
+        <div style="flex:1;display:flex;gap:2px;height:18px;border-radius:3px;overflow:hidden;">
+          <div style="width:${m.usn/maxAdm*100}%;background:var(--pih-red);opacity:0.85;" data-tooltip="USN: ${m.usn}"></div>
+          <div style="width:${m.pta/maxAdm*100}%;background:var(--blue);opacity:0.85;" data-tooltip="PTA: ${m.pta}"></div>
+          <div style="width:${m.pns/maxAdm*100}%;background:var(--green);opacity:0.85;" data-tooltip="PNS: ${m.pns}"></div>
+        </div>
+        <div style="font-size:11px;color:var(--gray-600);font-weight:600;width:24px;">${total}</div>
+      </div>`;
+  }).join('');
+
+  // ── OUTCOMES BY PROGRAM ──
+  const programs = ['USN','PTA','PNS'];
+  const progColors = { USN:'var(--pih-red)', PTA:'var(--blue)', PNS:'var(--green)' };
+  document.getElementById('outcomes-table').innerHTML = `
+    <table class="data-table">
+      <thead><tr>
+        <th>Programme</th><th>Guéri</th><th>Abandon</th><th>Transféré</th><th>Décédé</th><th>Taux guérison</th>
+      </tr></thead>
+      <tbody>
+        ${programs.map(prog => {
+          const dp = discharged.filter(p => p.program === prog);
+          if (dp.length === 0) return '';
+          const rec = dp.filter(p=>p.outcome==='Guéri').length;
+          const def = dp.filter(p=>p.outcome==='Abandon').length;
+          const tra = dp.filter(p=>p.outcome==='Transféré').length;
+          const dec = dp.filter(p=>p.outcome==='Décédé').length;
+          const rate = Math.round(rec/dp.length*100);
+          return `<tr>
+            <td>${programTag(prog)}</td>
+            <td style="color:var(--green);font-weight:700;">${rec}</td>
+            <td style="color:var(--yellow);font-weight:700;">${def}</td>
+            <td style="color:var(--blue);font-weight:700;">${tra}</td>
+            <td style="color:var(--pih-red);font-weight:700;">${dec}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <div style="flex:1;">${progressBar(rate, rate >= 75 ? 'var(--green)' : rate >= 60 ? 'var(--yellow)' : 'var(--pih-red)')}</div>
+                <span style="font-size:12px;font-weight:700;color:var(--gray-700);">${rate}%</span>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  // ── SITE COMPARISON ──
+  const siteComp = getSiteStats().map(s => {
+    const siteDischarged = discharged.filter(p => p.site === s.id);
+    const siteRec = siteDischarged.filter(p => p.outcome === 'Guéri').length;
+    const siteRate = siteDischarged.length > 0 ? Math.round(siteRec / siteDischarged.length * 100) : null;
+    return { ...s, discharged: siteDischarged.length, recoveryRate: siteRate };
+  });
+
+  document.getElementById('site-comparison').innerHTML = siteComp.map(s => `
+    <div class="site-row">
+      <div style="min-width:130px;">
+        <div class="site-name-fr" style="font-size:12px;">${s.commune}</div>
+        <div class="site-name-en">${s.count} actifs · ${s.discharged} sortis</div>
+      </div>
+      <div class="site-bar-wrap">
+        <div style="font-size:10px;color:var(--gray-400);margin-bottom:2px;">Taux de guérison / Recovery rate</div>
+        ${s.recoveryRate !== null ? progressBar(s.recoveryRate, s.recoveryRate >= 80 ? 'var(--green)' : s.recoveryRate >= 65 ? 'var(--yellow)' : 'var(--pih-red)') : '<span style="font-size:11px;color:var(--gray-400);">Insuffisant / Insufficient data</span>'}
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--gray-700);min-width:36px;text-align:right;">
+        ${s.recoveryRate !== null ? s.recoveryRate + '%' : '—'}
+      </div>
+    </div>`).join('');
+
+  // ── LENGTH OF STAY ──
+  const losBuckets = [
+    { label: '< 30j', min: 0, max: 29 },
+    { label: '30–45j', min: 30, max: 45 },
+    { label: '46–60j', min: 46, max: 60 },
+    { label: '61–75j', min: 61, max: 75 },
+    { label: '> 75j', min: 76, max: 9999 },
+  ];
+  const losCounts = losBuckets.map(b => ({
+    label: b.label,
+    value: discharged.filter(p => p.stay_days >= b.min && p.stay_days <= b.max).length,
+    color: 'var(--blue)',
+  }));
+  renderBarChart('los-chart', losCounts);
+
+  // ── DISCHARGED TABLE ──
+  document.getElementById('discharged-tbody').innerHTML = discharged.slice(0,10).map(p => {
+    const gain = p.discharge_weight && p.admission_weight
+      ? ((p.discharge_weight - p.admission_weight) * 1000).toFixed(0) + 'g'
+      : '—';
+    const outcomeColor = { 'Guéri':'var(--green)', 'Abandon':'var(--yellow)', 'Transféré':'var(--blue)', 'Décédé':'var(--pih-red)' };
+    return `<tr>
+      <td><div class="patient-name">${p.name}</div><div class="patient-id">${p.id}</div></td>
+      <td>${programTag(p.program)}</td>
+      <td style="font-size:12px;">${SITES.find(s=>s.id===p.site)?.commune || p.site}</td>
+      <td style="font-size:12px;font-family:var(--mono);">${p.stay_days}j</td>
+      <td style="font-weight:700;color:${outcomeColor[p.outcome]||'var(--gray-600)'};">${p.outcome}</td>
+      <td style="font-size:12px;font-family:var(--mono);color:${parseFloat(gain)>0?'var(--green)':'var(--gray-400)'};">${gain}</td>
+    </tr>`;
+  }).join('');
+
+  // ── RISK DISTRIBUTION ──
+  const riskCounts = ['critical','high','moderate','low'].map(r => ({
+    label: `${getRiskLabel(r).fr} / ${getRiskLabel(r).en}`,
+    value: patients.filter(p=>p.risk===r).length,
+    color: r==='critical'?'var(--pih-red)':r==='high'?'#c05c00':r==='moderate'?'var(--yellow)':'var(--green)',
+  }));
+  document.getElementById('risk-distribution').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
+      ${riskCounts.map(r => `
+        <div style="background:var(--gray-50);border-radius:var(--radius);padding:14px;text-align:center;border-top:3px solid ${r.color};">
+          <div style="font-size:28px;font-weight:700;color:${r.color};">${r.value}</div>
+          <div style="font-size:12px;color:var(--gray-600);">${r.label}</div>
+          <div style="font-size:10px;color:var(--gray-400);">${Math.round(r.value/patients.length*100)}% des actifs</div>
+        </div>`).join('')}
+    </div>
+    ${renderBarChart('risk-bar-inline', riskCounts) || ''}
+  `;
+}
+
+initSimBar(render);
+render();
+</script>
+</body>
+</html>

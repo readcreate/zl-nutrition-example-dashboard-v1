@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIH Nutrition — Équipe Clinique</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-container"></div>
+
+<div class="page active" id="page-clinical">
+
+  <div class="view-info">
+    <div class="view-info-icon">ℹ️</div>
+    <div>
+      <div class="view-info-fr">Vue Équipe Clinique — Liste complète des patients avec score de risque et dossier détaillé</div>
+      <div class="view-info-en">Clinical Staff view — Full patient list with risk scores, weight trajectories, and complete visit history. For doctors, nurses, and nutritionists.</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title-fr">Patients actifs — Vue clinique</div>
+    <div class="section-title-en">Active patients — Clinical view</div>
+  </div>
+
+  <div class="main-side-wide">
+
+    <!-- LEFT: PATIENT LIST -->
+    <div>
+      <div class="filter-bar">
+        <select id="cl-filter-program">
+          <option value="">Tous programmes</option>
+          <option value="USN">USN</option>
+          <option value="PTA">PTA</option>
+          <option value="PNS">PNS</option>
+        </select>
+        <select id="cl-filter-risk">
+          <option value="">Tous risques</option>
+          <option value="critical">🔴 Critique</option>
+          <option value="high">🟠 Élevé</option>
+          <option value="moderate">🟡 Modéré</option>
+          <option value="low">🟢 Faible</option>
+        </select>
+        <select id="cl-filter-site">
+          <option value="">Tous sites</option>
+        </select>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="clinical-table">
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Prog.</th>
+                <th>Risque</th>
+                <th>Dernière visite</th>
+                <th>Poids</th>
+                <th>MUAC</th>
+                <th>Oedème</th>
+                <th>Tendance</th>
+              </tr>
+            </thead>
+            <tbody id="clinical-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: PATIENT DETAIL PANEL -->
+    <div>
+      <div class="patient-panel" id="patient-detail">
+        <div style="color:var(--gray-400);font-size:13px;padding:20px 0;text-align:center;">
+          ← Sélectionnez un patient pour voir son dossier<br>
+          <span style="font-size:11px;">Select a patient to view their record</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div id="sim-bar-container"></div>
+
+<script src="js/data.js"></script>
+<script src="js/shared.js"></script>
+<script>
+document.getElementById('nav-container').innerHTML = buildNav('clinical');
+document.getElementById('sim-bar-container').innerHTML = buildSimBar();
+
+SITES.forEach(s => {
+  const opt = document.createElement('option');
+  opt.value = s.id;
+  opt.textContent = s.commune;
+  document.getElementById('cl-filter-site').appendChild(opt);
+});
+
+let selectedPatientId = null;
+
+function render() {
+  maybeAddSimAlerts();
+  renderPatientList();
+  if (selectedPatientId) {
+    const p = getPatients().find(p => p.id === selectedPatientId);
+    if (p) renderPatientDetail(p);
+  }
+}
+
+function renderPatientList() {
+  const progFil = document.getElementById('cl-filter-program').value;
+  const riskFil = document.getElementById('cl-filter-risk').value;
+  const siteFil = document.getElementById('cl-filter-site').value;
+  let patients = getPatients();
+  if (progFil) patients = patients.filter(p => p.program === progFil);
+  if (riskFil) patients = patients.filter(p => p.risk === riskFil);
+  if (siteFil) patients = patients.filter(p => p.site === siteFil);
+
+  document.getElementById('clinical-tbody').innerHTML = patients.map(p => {
+    const lastV = p.visits.at(-1);
+    const prevV = p.visits.length > 1 ? p.visits.at(-2) : null;
+    const weights = p.visits.map(v => v.weight);
+    const muacTrend = prevV ? (lastV.muac > prevV.muac ? '↑' : lastV.muac < prevV.muac ? '↓' : '→') : '—';
+    const muacColor = prevV ? (lastV.muac > prevV.muac ? 'var(--green)' : lastV.muac < prevV.muac ? 'var(--pih-red)' : 'var(--gray-400)') : 'var(--gray-400)';
+
+    return `
+      <tr class="${selectedPatientId === p.id ? 'selected-row' : ''}"
+          onclick="selectPatient('${p.id}')"
+          style="cursor:pointer;${selectedPatientId === p.id ? 'background:var(--blue-light);' : ''}">
+        <td>
+          <div class="patient-name">${p.name}</div>
+          <div class="patient-id">${p.id} · ${p.age_months}m · ${p.sex}</div>
+          ${p.overdue ? `<div style="font-size:10px;color:var(--pih-red);font-weight:600;">⚠ +${p.overdue.overdue}j retard</div>` : ''}
+        </td>
+        <td>${programTag(p.program)}</td>
+        <td>${riskBadge(p.risk)}</td>
+        <td style="font-size:12px;white-space:nowrap;">
+          ${fmtDate(new Date(p.last_visit))}<br>
+          <span style="font-size:10px;color:var(--gray-400);">${daysSinceLabel(p.days_since_visit)}</span>
+        </td>
+        <td style="font-size:13px;font-family:var(--mono);">${lastV?.weight ?? '—'} kg</td>
+        <td style="font-size:13px;font-family:var(--mono);">
+          ${lastV?.muac ?? '—'}mm
+          <span style="color:${muacColor};font-weight:700;">${muacTrend}</span>
+        </td>
+        <td>${oedemaFlag(lastV?.oedema)}</td>
+        <td>${sparkline(weights)}</td>
+      </tr>`;
+  }).join('');
+}
+
+function selectPatient(id) {
+  selectedPatientId = id;
+  const p = getPatients().find(p => p.id === id);
+  if (p) renderPatientDetail(p);
+  renderPatientList();
+}
+
+function renderPatientDetail(p) {
+  const site = SITES.find(s => s.id === p.site);
+  const chw = CHWS.find(c => c.id === p.chw);
+  const lastV = p.visits.at(-1);
+  const admV = p.visits[0];
+
+  // Weight gain since admission
+  const totalGain = lastV && admV ? ((lastV.weight - admV.weight) * 1000).toFixed(0) : '—';
+  const daysSinceAdm = Math.floor((new Date(p.last_visit) - new Date(p.admission_date)) / 86400000);
+  const gainPerDay = daysSinceAdm > 0 && admV && lastV ? ((lastV.weight - admV.weight) * 1000 / admV.weight / daysSinceAdm).toFixed(1) : '—';
+
+  document.getElementById('patient-detail').innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+      <div>
+        <div class="patient-panel-name">${p.name}</div>
+        <div class="patient-panel-meta">${p.id} · ${p.age_months} mois · ${p.sex === 'F' ? 'Fille/Girl' : 'Garçon/Boy'}</div>
+      </div>
+      ${riskBadge(p.risk)}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:12px;">
+      <div style="background:var(--gray-50);padding:8px;border-radius:var(--radius);">
+        <div style="color:var(--gray-400);font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Programme</div>
+        <div style="font-weight:700;">${programTag(p.program)} ${p.program}</div>
+      </div>
+      <div style="background:var(--gray-50);padding:8px;border-radius:var(--radius);">
+        <div style="color:var(--gray-400);font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Site</div>
+        <div style="font-weight:600;">${site?.commune || p.site}</div>
+      </div>
+      <div style="background:var(--gray-50);padding:8px;border-radius:var(--radius);">
+        <div style="color:var(--gray-400);font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">Admission</div>
+        <div style="font-weight:600;">${fmtDate(new Date(p.admission_date))}</div>
+      </div>
+      <div style="background:var(--gray-50);padding:8px;border-radius:var(--radius);">
+        <div style="color:var(--gray-400);font-size:10px;text-transform:uppercase;letter-spacing:0.06em;">ASC assigné</div>
+        <div style="font-weight:600;">${chw?.name || '—'}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;text-align:center;">
+      <div style="background:${parseFloat(gainPerDay) >= 5 ? 'var(--green-light)' : '#fde8ec'};padding:10px;border-radius:var(--radius);">
+        <div style="font-size:18px;font-weight:700;color:${parseFloat(gainPerDay) >= 5 ? 'var(--green)' : 'var(--pih-red)'};">${gainPerDay}<span style="font-size:10px;font-weight:400;">g/kg/j</span></div>
+        <div style="font-size:9px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.05em;">Gain poids moy.</div>
+      </div>
+      <div style="background:var(--gray-50);padding:10px;border-radius:var(--radius);">
+        <div style="font-size:18px;font-weight:700;color:var(--gray-800);">${lastV?.muac ?? '—'}<span style="font-size:10px;font-weight:400;">mm</span></div>
+        <div style="font-size:9px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.05em;">MUAC actuel</div>
+      </div>
+      <div style="background:lastV?.oedema ? '#fde8ec' : 'var(--gray-50)';padding:10px;border-radius:var(--radius);">
+        <div style="font-size:18px;font-weight:700;color:${lastV?.oedema ? 'var(--pih-red)' : 'var(--green)'};">${lastV?.oedema ? 'Oui' : 'Non'}</div>
+        <div style="font-size:9px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.05em;">Oedème</div>
+      </div>
+    </div>
+
+    ${p.notes ? `<div style="background:var(--yellow-light);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--gray-700);">
+      <strong style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--yellow);">Note clinique / Clinical note</strong><br>
+      ${p.notes}
+    </div>` : ''}
+
+    <!-- WEIGHT CHART (CSS bars) -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--gray-400);margin-bottom:8px;">Courbe de poids / Weight curve (kg)</div>
+      ${renderWeightChart(p)}
+    </div>
+
+    <!-- VISIT TIMELINE -->
+    <div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.07em;color:var(--gray-400);margin-bottom:10px;">Historique des visites / Visit history</div>
+      <div class="visit-timeline">
+        ${[...p.visits].reverse().map((v, i) => {
+          const isLatest = i === 0;
+          const dotColor = v.oedema ? 'var(--pih-red)' : isLatest ? 'var(--blue)' : 'var(--gray-300)';
+          return `
+            <div class="visit-item ${isLatest ? 'latest' : ''}" style="position:relative;">
+              <div class="visit-dot" style="background:${dotColor};position:absolute;left:-18px;top:12px;"></div>
+              <div class="visit-date">${v.type} — ${fmtDate(new Date(v.date))}</div>
+              <div class="visit-metrics">
+                <div class="visit-metric">Poids: <span>${v.weight} kg</span></div>
+                <div class="visit-metric">MUAC: <span>${v.muac} mm</span></div>
+                <div class="visit-metric">P/T: <span>${v.pt}%</span></div>
+                ${v.oedema ? '<div class="visit-metric" style="color:var(--pih-red);">⚠ Oedème</div>' : ''}
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderWeightChart(p) {
+  const weights = p.visits.map(v => v.weight);
+  const dates = p.visits.map(v => v.date.slice(5)); // MM-DD
+  const max = Math.max(...weights) * 1.1;
+  const min = Math.min(...weights) * 0.9;
+  const range = max - min;
+  const h = 80;
+  const w = 100 / weights.length;
+
+  return `<div style="display:flex;align-items:flex-end;gap:3px;height:${h}px;background:var(--gray-50);border-radius:var(--radius);padding:8px 8px 20px;position:relative;overflow:hidden;">
+    ${weights.map((wt, i) => {
+      const barH = Math.max(4, Math.round(((wt - min) / range) * (h - 30)));
+      const isLast = i === weights.length - 1;
+      const prev = i > 0 ? weights[i-1] : wt;
+      const color = isLast ? 'var(--blue)' : (wt >= prev ? 'var(--green)' : 'var(--pih-red)');
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end;">
+        <div style="font-size:8px;color:var(--gray-500);">${wt}</div>
+        <div style="width:100%;background:${color};border-radius:2px 2px 0 0;height:${barH}px;opacity:${isLast?1:0.6};transition:height 0.5s ease;"></div>
+        <div style="font-size:7px;color:var(--gray-400);transform:rotate(-45deg);white-space:nowrap;">${dates[i]}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+['cl-filter-program','cl-filter-risk','cl-filter-site'].forEach(id => {
+  document.getElementById(id).addEventListener('change', renderPatientList);
+});
+
+initSimBar(render);
+render();
+</script>
+</body>
+</html>

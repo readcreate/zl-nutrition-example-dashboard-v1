@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIH Nutrition — Introduction</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-container"></div>
+
+<div class="page active" id="page-intro">
+
+  <!-- HERO -->
+  <div class="intro-hero">
+    <div class="intro-demo-badge">⚠ Démo / Demo — Données fictives / Fictional data</div>
+    <div class="intro-tagline-fr">Aucun enfant ne passe entre les mailles du filet.</div>
+    <div class="intro-tagline-en">No child falls through the cracks.</div>
+    <p class="intro-desc">
+      Ce tableau de bord transforme les données CollaborateCare/CommCare en intelligence actionnable — 
+      alertes en temps réel, suivi par patient, et visibilité pour chaque rôle de l'équipe PIH.<br><br>
+      <em style="opacity:0.6;font-size:13px;">This dashboard transforms CommCare data into actionable intelligence — real-time alerts, per-patient tracking, and role-specific visibility for every PIH team member.</em>
+    </p>
+  </div>
+
+  <!-- WHY THIS / VS TABLE -->
+  <div class="intro-grid" style="margin-bottom:24px;">
+    <div class="intro-card">
+      <div class="intro-card-icon">🎯</div>
+      <div class="intro-card-title-fr">Le problème central</div>
+      <div class="intro-card-title-en">The core problem</div>
+      <p>
+        Les données existent dans CommCare — mais personne ne les surveille de manière systématique. 
+        Un enfant peut manquer deux rendez-vous sans qu'aucune alerte ne soit envoyée. 
+        Ce tableau de bord change cela.<br><br>
+        <em style="color:var(--gray-400);font-size:12px;">The data exists in CommCare — but nobody watches it systematically. A child can miss two appointments without any alert being sent. This dashboard changes that.</em>
+      </p>
+    </div>
+    <div class="intro-card">
+      <div class="intro-card-icon">📊</div>
+      <div class="intro-card-title-fr">Ce qui est nouveau</div>
+      <div class="intro-card-title-en">What is new</div>
+      <table class="vs-table">
+        <thead>
+          <tr>
+            <th>Capacité / Capability</th>
+            <th>CommCare</th>
+            <th>Power BI</th>
+            <th>Ce tableau</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Collecte de données / Data collection</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td></tr>
+          <tr><td>Graphiques statiques / Static charts</td><td class="partial">~</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Alertes automatiques / Auto alerts</td><td class="cross">—</td><td class="cross">—</td><td class="check">✓</td></tr>
+          <tr><td>Score de risque patient / Risk score</td><td class="cross">—</td><td class="cross">—</td><td class="check">✓</td></tr>
+          <tr><td>Vue par rôle / Role-based view</td><td class="cross">—</td><td class="partial">~</td><td class="check">✓</td></tr>
+          <tr><td>Parcours patient complet / Full journey</td><td class="cross">—</td><td class="cross">—</td><td class="check">✓</td></tr>
+          <tr><td>Journal d'alertes / Alert log</td><td class="cross">—</td><td class="cross">—</td><td class="check">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FOUR VIEWS -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-title">Les quatre vues / The four views</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:8px;">
+      <a href="supervisor.html" style="display:block;padding:16px;background:var(--gray-50);border-radius:var(--radius);border:1.5px solid var(--gray-200);transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--pih-red)'" onmouseout="this.style.borderColor='var(--gray-200)'">
+        <div style="font-size:22px;margin-bottom:6px;">🗺</div>
+        <div style="font-weight:700;color:var(--gray-800);font-size:14px;">Superviseur</div>
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px;">Supervisor</div>
+        <div style="font-size:12px;color:var(--gray-600);">Vue d'ensemble de tous les sites, alertes prioritaires, statistiques du programme. / Program-wide overview, priority alerts, site heatmap.</div>
+      </a>
+      <a href="clinical.html" style="display:block;padding:16px;background:var(--gray-50);border-radius:var(--radius);border:1.5px solid var(--gray-200);transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--gray-200)'">
+        <div style="font-size:22px;margin-bottom:6px;">🩺</div>
+        <div style="font-weight:700;color:var(--gray-800);font-size:14px;">Équipe Clinique</div>
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px;">Clinical Staff</div>
+        <div style="font-size:12px;color:var(--gray-600);">Liste de patients avec score de risque, courbes de poids, historique des visites. / Patient list with risk scores, weight curves, visit history.</div>
+      </a>
+      <a href="chw.html" style="display:block;padding:16px;background:var(--gray-50);border-radius:var(--radius);border:1.5px solid var(--gray-200);transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--gray-200)'">
+        <div style="font-size:22px;margin-bottom:6px;">👤</div>
+        <div style="font-weight:700;color:var(--gray-800);font-size:14px;">Agent de Santé (ASC)</div>
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px;">Community Health Worker</div>
+        <div style="font-size:12px;color:var(--gray-600);">Vue simplifiée: uniquement les patients de cet ASC, triés par urgence, avec action claire. / Simple view: only this CHW's patients, sorted by urgency.</div>
+      </a>
+      <a href="analytics.html" style="display:block;padding:16px;background:var(--gray-50);border-radius:var(--radius);border:1.5px solid var(--gray-200);transition:border-color 0.15s;" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--gray-200)'">
+        <div style="font-size:22px;margin-bottom:6px;">📈</div>
+        <div style="font-weight:700;color:var(--gray-800);font-size:14px;">Analytique M&E</div>
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px;">M&E Analytics</div>
+        <div style="font-size:12px;color:var(--gray-600);">Cohortes, taux de guérison, durée de séjour, comparaisons entre sites. / Cohorts, recovery rates, length of stay, site comparisons.</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ALERT SYSTEM EXPLAINER -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-title">Système d'alertes / Alert system</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:8px;">
+      <div style="padding:14px;background:var(--green-light);border-radius:var(--radius);">
+        <div style="font-size:20px;margin-bottom:6px;">📋</div>
+        <div style="font-weight:700;font-size:13px;color:var(--green);">Résumé quotidien</div>
+        <div style="font-size:10px;color:var(--green);margin-bottom:6px;opacity:0.8;">Daily digest</div>
+        <div style="font-size:12px;color:var(--gray-600);">Chaque matin, chaque ASC reçoit un résumé de ses patients à visiter. Via WhatsApp.</div>
+      </div>
+      <div style="padding:14px;background:#fde8ec;border-radius:var(--radius);">
+        <div style="font-size:20px;margin-bottom:6px;">🚨</div>
+        <div style="font-weight:700;font-size:13px;color:var(--pih-red);">Alerte urgente</div>
+        <div style="font-size:10px;color:var(--pih-red);margin-bottom:6px;opacity:0.8;">Urgent alert</div>
+        <div style="font-size:12px;color:var(--gray-600);">Pour événements critiques seulement: oedème, perte de poids, absence prolongée. Via WhatsApp.</div>
+      </div>
+      <div style="padding:14px;background:var(--blue-light);border-radius:var(--radius);">
+        <div style="font-size:20px;margin-bottom:6px;">📊</div>
+        <div style="font-weight:700;font-size:13px;color:var(--blue);">Rapport hebdomadaire</div>
+        <div style="font-size:10px;color:var(--blue);margin-bottom:6px;opacity:0.8;">Weekly report</div>
+        <div style="font-size:12px;color:var(--gray-600);">Pour les superviseurs et managers chaque vendredi. Via email.</div>
+      </div>
+      <div style="padding:14px;background:var(--yellow-light);border-radius:var(--radius);">
+        <div style="font-size:20px;margin-bottom:6px;">🔴</div>
+        <div style="font-weight:700;font-size:13px;color:var(--yellow);">Escalade superviseur</div>
+        <div style="font-size:10px;color:var(--yellow);margin-bottom:6px;opacity:0.8;">Supervisor escalation</div>
+        <div style="font-size:12px;color:var(--gray-600);">Si une alerte urgente n'est pas acquittée sous 24h, le superviseur est notifié. WhatsApp + Email.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DUMMY DATA CHARACTERISTICS -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-title">Caractéristiques des données fictives / Dummy data characteristics</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px;">
+      <div>
+        <div class="data-assumption"><strong>Patients actifs:</strong> 14 patients fictifs dans 3 programmes (USN, PTA, PNS) / 14 synthetic active patients across 3 programs</div>
+        <div class="data-assumption"><strong>Patients sortis:</strong> 15 patients fictifs avec résultats / 15 discharged patients with outcomes</div>
+        <div class="data-assumption"><strong>Sites:</strong> 6 vrais sites PIH Haïti — Mirebalais, Hinche, Lascahobas, Boucan Carré, Sapaterre, Pignon / 6 real PIH Haiti sites</div>
+        <div class="data-assumption"><strong>ASC:</strong> 7 agents de santé fictifs, un par site / 7 fictional CHWs, one per site</div>
+        <div class="data-assumption"><strong>Période:</strong> Admissions oct–jan 2025–2026 / Admissions Oct–Jan 2025–2026</div>
+        <div class="data-assumption"><strong>Langue:</strong> Données en français, interface bilingue FR/EN</div>
+      </div>
+      <div>
+        <div class="data-assumption"><strong>Seuil visite USN:</strong> Alerte si &gt;7 jours sans visite / Alert if &gt;7 days without visit</div>
+        <div class="data-assumption"><strong>Seuil visite PTA/PNS:</strong> Alerte si &gt;14 jours sans visite / Alert if &gt;14 days without visit</div>
+        <div class="data-assumption"><strong>Score de risque:</strong> Basé sur retard de visite, tendance MUAC, gain de poids (&lt;5g/kg/jour), oedème / Based on visit delay, MUAC trend, weight gain, oedema</div>
+        <div class="data-assumption"><strong>⚠ Validation clinique requise:</strong> Les seuils utilisés sont basés sur les protocoles WHO/Sphere SAM/MAM. Ils doivent être validés par l'équipe clinique PIH avant toute mise en production. / Thresholds based on WHO/Sphere SAM/MAM protocols — must be validated by PIH clinical team before production use.</div>
+        <div class="data-assumption"><strong>Assignation ASC:</strong> Attribution fictive pour la démo. En production, cette donnée doit provenir de CommCare. / Fictional for demo. In production, must come from CommCare.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOSSARY -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-title">Glossaire / Glossary</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:8px;font-size:13px;">
+      <div class="data-assumption"><strong>SAM</strong> — Malnutrition aiguë sévère / Severe Acute Malnutrition. MUAC &lt;115mm ou P/T &lt;70%.</div>
+      <div class="data-assumption"><strong>MAM</strong> — Malnutrition aiguë modérée / Moderate Acute Malnutrition. MUAC 115–125mm ou P/T 70–79%.</div>
+      <div class="data-assumption"><strong>USN</strong> — Unité de Stabilisation Nutritionnelle (hospitalisation SAM).</div>
+      <div class="data-assumption"><strong>PTA</strong> — Programme Thérapeutique Ambulatoire (SAM ambulatoire).</div>
+      <div class="data-assumption"><strong>PNS</strong> — Programme Nutritionnel Supplémentaire (MAM/préventif).</div>
+      <div class="data-assumption"><strong>MUAC / PB</strong> — Périmètre brachial / Mid-upper arm circumference.</div>
+      <div class="data-assumption"><strong>P/T</strong> — Poids-pour-taille / Weight-for-height.</div>
+      <div class="data-assumption"><strong>ASC</strong> — Agent de Santé Communautaire / Community Health Worker (CHW).</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:20px 0 40px;color:var(--gray-400);font-size:12px;">
+    <a href="nextsteps.html" style="color:var(--blue);font-weight:600;">→ Voir les prochaines étapes pour la mise en production / See next steps for production →</a>
+  </div>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/shared.js"></script>
+<script>
+  document.getElementById('nav-container').innerHTML = buildNav('intro');
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIH Nutrition — Agent de Santé (ASC)</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-container"></div>
+
+<div class="page active" id="page-chw">
+
+  <div class="view-info">
+    <div class="view-info-icon">ℹ️</div>
+    <div>
+      <div class="view-info-fr">Vue Agent de Santé Communautaire (ASC) — Affiche uniquement les patients assignés à cet ASC, triés par urgence. Conçue pour être simple et utilisable sur téléphone.</div>
+      <div class="view-info-en">Community Health Worker view — Shows only this CHW's assigned patients, sorted by urgency. Designed to be simple and usable on a low-end phone.</div>
+    </div>
+  </div>
+
+  <!-- CHW SELECTOR (demo only) -->
+  <div style="background:var(--gray-800);color:white;padding:12px 20px;border-radius:var(--radius-lg);margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div style="font-size:12px;color:rgba(255,255,255,0.6);">👤 Démo: choisir un ASC / Demo: select a CHW</div>
+    <select id="chw-selector" style="font-family:var(--font);font-size:13px;padding:6px 12px;border:none;border-radius:var(--radius);background:rgba(255,255,255,0.1);color:white;cursor:pointer;">
+    </select>
+    <div style="font-size:11px;color:rgba(255,255,255,0.4);">En production, chaque ASC voit uniquement sa propre vue. / In production, each CHW sees only their own view.</div>
+  </div>
+
+  <div class="main-side">
+
+    <!-- LEFT: CHW ACTION LIST -->
+    <div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <div>
+          <div class="section-title-fr" id="chw-name" style="font-size:18px;">—</div>
+          <div class="section-title-en" id="chw-site" style="font-size:12px;"></div>
+        </div>
+        <div id="chw-summary-badge"></div>
+      </div>
+
+      <!-- DAILY DIGEST CARD -->
+      <div id="daily-digest-card" style="margin-bottom:16px;"></div>
+
+      <!-- PATIENT CARDS -->
+      <div id="chw-patient-list"></div>
+    </div>
+
+    <!-- RIGHT: ALERT LOG FOR THIS CHW -->
+    <div>
+      <div class="card">
+        <div class="card-title">📱 Alertes envoyées / Alerts sent to this CHW</div>
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:12px;">Journal des alertes WhatsApp et résumés quotidiens / WhatsApp alerts and daily digests log</div>
+        <div class="scrollable" style="max-height:500px;">
+          <div id="chw-alert-log"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div id="sim-bar-container"></div>
+
+<script src="js/data.js"></script>
+<script src="js/shared.js"></script>
+<script>
+document.getElementById('nav-container').innerHTML = buildNav('chw');
+document.getElementById('sim-bar-container').innerHTML = buildSimBar();
+
+// Populate CHW selector
+CHWS.forEach(c => {
+  const opt = document.createElement('option');
+  opt.value = c.id;
+  opt.textContent = `${c.name} (${c.site})`;
+  document.getElementById('chw-selector').appendChild(opt);
+});
+
+function render() {
+  maybeAddSimAlerts();
+  const chwId = document.getElementById('chw-selector').value;
+  const chw = CHWS.find(c => c.id === chwId);
+  const site = SITES.find(s => s.id === chw?.site);
+  const patients = getCHWPatients(chwId);
+
+  document.getElementById('chw-name').textContent = chw?.name || '—';
+  document.getElementById('chw-site').textContent = site ? `${site.name_fr}` : '';
+
+  const overdue = patients.filter(p => p.overdue).length;
+  const critical = patients.filter(p => p.risk === 'critical').length;
+
+  document.getElementById('chw-summary-badge').innerHTML = critical > 0
+    ? `<span class="risk-badge critical">🔴 ${critical} critique${critical>1?'s':''}</span>`
+    : overdue > 0
+    ? `<span class="risk-badge high">🟠 ${overdue} en retard</span>`
+    : `<span class="risk-badge low">✓ Tout en ordre</span>`;
+
+  // DAILY DIGEST CARD
+  const today = fmtDate(simDate());
+  document.getElementById('daily-digest-card').innerHTML = `
+    <div style="background:var(--green-light);border-radius:var(--radius-lg);padding:16px 18px;border-left:4px solid var(--green);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:18px;">📋</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--green);">Résumé du jour — ${today}</div>
+          <div style="font-size:11px;color:var(--green);opacity:0.75;">Daily digest · Envoyé via WhatsApp à 07h00 / Sent via WhatsApp at 07:00</div>
+        </div>
+        <span style="margin-left:auto;font-size:10px;background:white;padding:3px 8px;border-radius:4px;color:var(--green);font-weight:700;">💬 WhatsApp</span>
+      </div>
+      <div style="font-size:13px;color:var(--gray-700);">
+        Vous avez <strong>${patients.length}</strong> patient${patients.length>1?'s':''} actif${patients.length>1?'s':''}.
+        ${overdue > 0 ? `<strong style="color:var(--pih-red);">${overdue} en retard de visite.</strong>` : 'Aucun retard de visite aujourd\'hui.'}
+        ${critical > 0 ? `<strong style="color:var(--pih-red);">⚠ ${critical} patient${critical>1?'s':''} en situation critique.</strong>` : ''}
+      </div>
+      <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">
+        You have ${patients.length} active patient${patients.length>1?'s':''}. ${overdue > 0 ? `${overdue} overdue.` : 'No overdue visits today.'}
+      </div>
+    </div>`;
+
+  // PATIENT CARDS
+  if (patients.length === 0) {
+    document.getElementById('chw-patient-list').innerHTML = `
+      <div style="text-align:center;padding:40px;color:var(--gray-400);font-size:13px;">
+        Aucun patient assigné à cet ASC.<br><em>No patients assigned to this CHW.</em>
+      </div>`;
+  } else {
+    document.getElementById('chw-patient-list').innerHTML = patients.map(p => {
+      const lastV = p.visits.at(-1);
+      const action = getActionRequired(p);
+      return `
+        <div class="chw-patient-card ${p.risk}">
+          <div class="chw-card-top">
+            <div>
+              <div class="chw-card-name">${p.name}</div>
+              <div class="chw-card-meta">
+                ${p.id} · ${p.age_months} mois · ${programTag(p.program)} · ${SITES.find(s=>s.id===p.site)?.commune || p.site}
+              </div>
+              <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                ${riskBadge(p.risk)}
+                ${lastV?.oedema ? oedemaFlag(true) : ''}
+              </div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:11px;color:var(--gray-400);">Dernière visite</div>
+              <div style="font-size:12px;font-weight:700;color:var(--gray-700);">${fmtDate(new Date(p.last_visit))}</div>
+              <div style="font-size:11px;color:${p.overdue ? 'var(--pih-red)' : 'var(--gray-400)'};">
+                ${p.overdue ? `⚠ ${p.overdue.overdue}j de retard` : `${p.days_since_visit}j`}
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0;font-size:12px;">
+            <div style="background:var(--gray-50);padding:6px 8px;border-radius:4px;">
+              <div style="font-size:9px;color:var(--gray-400);text-transform:uppercase;">Poids</div>
+              <div style="font-weight:700;">${lastV?.weight ?? '—'} kg</div>
+            </div>
+            <div style="background:var(--gray-50);padding:6px 8px;border-radius:4px;">
+              <div style="font-size:9px;color:var(--gray-400);text-transform:uppercase;">MUAC</div>
+              <div style="font-weight:700;">${lastV?.muac ?? '—'} mm</div>
+            </div>
+            <div style="background:var(--gray-50);padding:6px 8px;border-radius:4px;">
+              <div style="font-size:9px;color:var(--gray-400);text-transform:uppercase;">Visites</div>
+              <div style="font-weight:700;">${p.visits.length}</div>
+            </div>
+          </div>
+
+          <div class="chw-card-action ${action.urgent ? 'urgent' : 'normal'}">
+            ${action.urgent ? '🚨 ' : '📅 '}
+            <strong>${action.fr}</strong><br>
+            <span style="font-weight:400;font-size:11px;">${action.en}</span>
+          </div>
+
+          ${action.alert ? `
+          <div style="margin-top:8px;padding:8px 10px;background:rgba(200,16,46,0.06);border-radius:4px;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;">💬</span>
+            <div style="font-size:11px;color:var(--pih-red);flex:1;"><strong>Alerte WhatsApp envoyée</strong> — ${action.alertMsg}</div>
+            <span style="font-size:10px;background:#fde8ec;padding:2px 6px;border-radius:3px;color:var(--pih-red);font-weight:700;">WhatsApp</span>
+          </div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  // CHW ALERT LOG
+  const chwAlerts = ALERT_LOG.filter(a => a.chw === chwId || (a.type === 'daily' && !a.chw)).slice(0, 10);
+  document.getElementById('chw-alert-log').innerHTML = chwAlerts.length === 0
+    ? '<div style="color:var(--gray-400);font-size:12px;padding:8px 0;">Aucune alerte / No alerts</div>'
+    : chwAlerts.map(a => `
+      <div class="alert-log-entry">
+        <div class="alert-icon ${a.type}">${a.icon}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="alert-text-fr">${a.fr}</div>
+          <div class="alert-text-en">${a.en}</div>
+          <div class="alert-time">${a.time}</div>
+        </div>
+        <div class="alert-channel ${a.channel}">${a.channel === 'whatsapp' ? '💬 WhatsApp' : '✉ Email'}</div>
+      </div>`).join('');
+}
+
+function getActionRequired(p) {
+  const lastV = p.visits.at(-1);
+  const threshold = p.program === 'USN' ? 7 : 14;
+
+  if (p.risk === 'critical' || p.risk === 'high') {
+    const reasons = [];
+    if (p.overdue) reasons.push(`absent depuis ${p.overdue.days} jours / ${p.overdue.days} days without visit`);
+    if (lastV?.oedema) reasons.push('oedème présent / oedema present');
+    return {
+      urgent: true,
+      fr: `Visite urgente requise — ${reasons[0] || 'détérioration clinique'}`,
+      en: `Urgent visit required — ${reasons[0] || 'clinical deterioration'}`,
+      alert: true,
+      alertMsg: `${p.name} — alerte envoyée le ${fmtDate(simDate())}`,
+    };
+  }
+
+  if (p.days_since_visit > threshold * 0.6) {
+    return {
+      urgent: false,
+      fr: `Visite prévue — prochain rendez-vous dans ~${Math.max(0, threshold - p.days_since_visit)} jour${threshold - p.days_since_visit > 1 ? 's' : ''}`,
+      en: `Scheduled visit — next appointment in ~${Math.max(0, threshold - p.days_since_visit)} day(s)`,
+      alert: false,
+    };
+  }
+
+  return {
+    urgent: false,
+    fr: 'Suivi normal — aucune action immédiate requise',
+    en: 'Normal follow-up — no immediate action required',
+    alert: false,
+  };
+}
+
+document.getElementById('chw-selector').addEventListener('change', render);
+initSimBar(render);
+render();
+</script>
+</body>
+</html>

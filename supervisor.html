@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIH Nutrition — Superviseur</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-container"></div>
+
+<div class="page active" id="page-supervisor">
+
+  <div class="view-info">
+    <div class="view-info-icon">ℹ️</div>
+    <div>
+      <div class="view-info-fr">Vue Superviseur — Visibilité sur tous les sites et tous les programmes</div>
+      <div class="view-info-en">Supervisor view — Full visibility across all sites and programs. Designed for program managers and site supervisors.</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title-fr">Tableau de bord superviseur</div>
+    <div class="section-title-en">Supervisor Command Center</div>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="stat-grid" id="stat-grid"></div>
+
+  <div class="main-side" style="margin-bottom:20px;">
+
+    <!-- PRIORITY ALERTS -->
+    <div class="card">
+      <div class="card-title">⚠ Alertes prioritaires / Priority alerts</div>
+      <div id="priority-alerts"></div>
+    </div>
+
+    <!-- SITE HEATMAP -->
+    <div class="card">
+      <div class="card-title">Sites — charge et alertes / Sites — load & alerts</div>
+      <div id="site-heatmap"></div>
+    </div>
+
+  </div>
+
+  <div class="two-col" style="margin-bottom:20px;">
+
+    <!-- PROGRAM BREAKDOWN -->
+    <div class="card">
+      <div class="card-title">Répartition par programme / Program breakdown</div>
+      <div id="program-breakdown"></div>
+    </div>
+
+    <!-- ALERT LOG -->
+    <div class="card">
+      <div class="card-title">Journal d'alertes / Alert log <span style="font-size:10px;color:var(--gray-400);font-weight:400;">(dernières alertes / recent alerts)</span></div>
+      <div class="scrollable" style="max-height:340px;">
+        <div id="alert-log-super"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FULL PATIENT TABLE -->
+  <div class="card" style="margin-bottom:80px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div class="card-title" style="margin-bottom:0;">Tous les patients actifs / All active patients</div>
+      <div class="filter-bar" style="margin-bottom:0;">
+        <select id="filter-site">
+          <option value="">Tous les sites / All sites</option>
+        </select>
+        <select id="filter-program">
+          <option value="">Tous programmes / All programs</option>
+          <option value="USN">USN</option>
+          <option value="PTA">PTA</option>
+          <option value="PNS">PNS</option>
+        </select>
+        <select id="filter-risk">
+          <option value="">Tous risques / All risks</option>
+          <option value="critical">Critique</option>
+          <option value="high">Élevé</option>
+          <option value="moderate">Modéré</option>
+          <option value="low">Faible</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="all-patients-table">
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Programme</th>
+            <th>Site</th>
+            <th>Âge</th>
+            <th>Dernière visite / Last visit</th>
+            <th>MUAC</th>
+            <th>Oedème</th>
+            <th>Risque / Risk</th>
+          </tr>
+        </thead>
+        <tbody id="all-patients-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div id="sim-bar-container"></div>
+
+<script src="js/data.js"></script>
+<script src="js/shared.js"></script>
+<script>
+document.getElementById('nav-container').innerHTML = buildNav('supervisor');
+document.getElementById('sim-bar-container').innerHTML = buildSimBar();
+
+// Populate site filter
+SITES.forEach(s => {
+  const opt = document.createElement('option');
+  opt.value = s.id;
+  opt.textContent = s.name_fr;
+  document.getElementById('filter-site').appendChild(opt);
+});
+
+function render() {
+  maybeAddSimAlerts();
+  const patients = getPatients();
+  const siteStats = getSiteStats();
+
+  // ── STAT CARDS ──
+  const critical = patients.filter(p => p.risk === 'critical').length;
+  const overdue = patients.filter(p => p.overdue).length;
+  const oedema = patients.filter(p => p.visits.at(-1)?.oedema).length;
+
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-card red">
+      <div class="stat-label-fr">Patients actifs</div>
+      <div class="stat-label-en">Active patients</div>
+      <div class="stat-value">${patients.length}</div>
+      <div class="stat-sub">USN: ${patients.filter(p=>p.program==='USN').length} · PTA: ${patients.filter(p=>p.program==='PTA').length} · PNS: ${patients.filter(p=>p.program==='PNS').length}</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label-fr">Risque critique</div>
+      <div class="stat-label-en">Critical risk</div>
+      <div class="stat-value" style="color:var(--pih-red)">${critical}</div>
+      <div class="stat-sub">Action immédiate requise / Immediate action required</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label-fr">En retard de visite</div>
+      <div class="stat-label-en">Overdue for visit</div>
+      <div class="stat-value" style="color:var(--yellow)">${overdue}</div>
+      <div class="stat-sub">Dépasse le délai protocole / Beyond protocol window</div>
+    </div>
+    <div class="stat-card yellow">
+      <div class="stat-label-fr">Avec oedème</div>
+      <div class="stat-label-en">With oedema</div>
+      <div class="stat-value" style="color:var(--yellow)">${oedema}</div>
+      <div class="stat-sub">Dernier enregistrement / Last recorded</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label-fr">Guéris ce mois</div>
+      <div class="stat-label-en">Recovered this month</div>
+      <div class="stat-value" style="color:var(--green)">3</div>
+      <div class="stat-sub">Taux: 78% / Rate: 78%</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label-fr">Sites actifs</div>
+      <div class="stat-label-en">Active sites</div>
+      <div class="stat-value" style="color:var(--blue)">${siteStats.length}</div>
+      <div class="stat-sub">${siteStats.filter(s=>s.alerts>0).length} site(s) avec alertes / with alerts</div>
+    </div>
+  `;
+
+  // ── PRIORITY ALERTS ──
+  const criticalPts = patients.filter(p => p.risk === 'critical' || p.risk === 'high');
+  document.getElementById('priority-alerts').innerHTML = criticalPts.length === 0
+    ? '<div style="color:var(--green);font-size:13px;padding:12px 0;">✓ Aucune alerte prioritaire / No priority alerts</div>'
+    : criticalPts.map(p => {
+        const lastV = p.visits.at(-1);
+        const reasons = [];
+        if (p.overdue) reasons.push(`${p.overdue.days}j sans visite / days without visit`);
+        if (lastV?.oedema) reasons.push('Oedème présent');
+        if (lastV?.muac < 110) reasons.push(`MUAC bas: ${lastV.muac}mm`);
+        return `
+          <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--gray-100);">
+            <div>${riskBadge(p.risk)}</div>
+            <div style="flex:1;">
+              <div style="font-weight:700;font-size:13px;color:var(--gray-800);">${p.name}</div>
+              <div style="font-size:11px;color:var(--gray-400);">${p.id} · ${programTag(p.program)} · ${p.site}</div>
+              <div style="font-size:12px;color:var(--pih-red);margin-top:3px;">${reasons.join(' · ')}</div>
+            </div>
+            <a href="clinical.html" style="font-size:11px;color:var(--blue);white-space:nowrap;">Voir dossier →</a>
+          </div>`;
+      }).join('');
+
+  // ── SITE HEATMAP ──
+  const maxCount = Math.max(...siteStats.map(s => s.count));
+  document.getElementById('site-heatmap').innerHTML = siteStats.map(s => `
+    <div class="site-row">
+      <div style="min-width:140px;">
+        <div class="site-name-fr">${s.name_fr.replace('Centre de Santé de ','CS ').replace('Hôpital Universitaire de ','HU ').replace('Hôpital de ','Hôp. ').replace('Hôpital St. Nicolas de ','Hôp. ')}</div>
+        <div class="site-name-en">${s.commune}</div>
+      </div>
+      <div class="site-bar-wrap">
+        ${progressBar(s.count / maxCount * 100, s.alerts > 0 ? 'var(--pih-red)' : 'var(--blue)')}
+      </div>
+      <div class="site-count">${s.count}</div>
+      <div class="site-alerts">${s.alerts > 0 ? `🚨 ${s.alerts} alerte${s.alerts>1?'s':''}` : '<span style="color:var(--green)">✓</span>'}</div>
+    </div>
+  `).join('');
+
+  // ── PROGRAM BREAKDOWN ──
+  const programs = ['USN','PTA','PNS'];
+  const progColors = { USN: 'var(--pih-red)', PTA: 'var(--blue)', PNS: 'var(--green)' };
+  const progDesc = { USN: 'SAM hospitalisé / Inpatient SAM', PTA: 'SAM ambulatoire / Outpatient SAM', PNS: 'MAM / Préventif' };
+  document.getElementById('program-breakdown').innerHTML = programs.map(prog => {
+    const pp = patients.filter(p => p.program === prog);
+    const crit = pp.filter(p => p.risk === 'critical').length;
+    const hi = pp.filter(p => p.risk === 'high').length;
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          ${programTag(prog)}
+          <span style="font-size:13px;font-weight:700;color:var(--gray-700);">${pp.length} patients</span>
+          <span style="font-size:11px;color:var(--gray-400);">${progDesc[prog]}</span>
+          ${crit > 0 ? `<span style="font-size:10px;color:var(--pih-red);font-weight:700;margin-left:auto;">🔴 ${crit} critique${crit>1?'s':''}</span>` : ''}
+          ${hi > 0 ? `<span style="font-size:10px;color:#c05c00;font-weight:700;margin-left:${crit?'4px':'auto'};">🟠 ${hi} élevé${hi>1?'s':''}</span>` : ''}
+        </div>
+        ${progressBar(pp.length / patients.length * 100, progColors[prog])}
+        <div style="font-size:11px;color:var(--gray-400);margin-top:3px;">
+          ${pp.filter(p=>p.risk==='low').length} faible · ${pp.filter(p=>p.risk==='moderate').length} modéré · ${hi} élevé · ${crit} critique
+        </div>
+      </div>`;
+  }).join('');
+
+  // ── ALERT LOG ──
+  renderAlertLog('alert-log-super', 8);
+
+  // ── PATIENT TABLE ──
+  renderTable();
+}
+
+function renderTable() {
+  const siteFil = document.getElementById('filter-site').value;
+  const progFil = document.getElementById('filter-program').value;
+  const riskFil = document.getElementById('filter-risk').value;
+  let patients = getPatients();
+  if (siteFil) patients = patients.filter(p => p.site === siteFil);
+  if (progFil) patients = patients.filter(p => p.program === progFil);
+  if (riskFil) patients = patients.filter(p => p.risk === riskFil);
+
+  document.getElementById('all-patients-tbody').innerHTML = patients.map(p => {
+    const lastV = p.visits.at(-1);
+    return `
+      <tr onclick="window.location='clinical.html'" style="cursor:pointer;">
+        <td><div class="patient-name">${p.name}</div><div class="patient-id">${p.id}</div></td>
+        <td>${programTag(p.program)}</td>
+        <td style="font-size:12px;">${SITES.find(s=>s.id===p.site)?.commune || p.site}</td>
+        <td style="font-size:12px;">${p.age_months} mois</td>
+        <td style="font-size:12px;">
+          ${fmtDate(new Date(p.last_visit))}
+          <div style="font-size:10px;color:${p.overdue ? 'var(--pih-red)' : 'var(--gray-400)'};">
+            ${p.overdue ? `⚠ +${p.overdue.overdue}j retard` : `${p.days_since_visit}j`}
+          </div>
+        </td>
+        <td style="font-size:13px;font-family:var(--mono);">${lastV?.muac ?? '—'}mm</td>
+        <td>${oedemaFlag(lastV?.oedema)}</td>
+        <td>${riskBadge(p.risk)}</td>
+      </tr>`;
+  }).join('');
+}
+
+['filter-site','filter-program','filter-risk'].forEach(id => {
+  document.getElementById(id).addEventListener('change', renderTable);
+});
+
+initSimBar(render);
+render();
+</script>
+</body>
+</html>
